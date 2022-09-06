@@ -1,9 +1,15 @@
 #!/usr/bin/perl
+
+# This tool calculates Growing Degree Days from AmbientWeather weather station data.
+#
+# About GDD:
+# * http://oregonviticulture.net/gdd/gdd.html
+#
 #
 # Assumptions:
-# This tool reads a CSV exported from the AmbientWeather dashboard's data 
+# This tool reads a CSV exported from the AmbientWeather dashboard's data
 # interface.  The data should be at least in the format of DataElement,Date,Value
-# where we assume that the first element will be a low or high temperature, the 
+# where we assume that the first element will be a low or high temperature, the
 # second will be the date for that element, and the third will be the actual value.
 
 use strict;
@@ -12,7 +18,7 @@ use strict;
 my @csv;
 while(<>){
 	my $l = $_;
-	chomp; 
+	chomp;
 
 	# Only care about high and low temps
 	if(/^(High,|Low,)/) {
@@ -21,7 +27,7 @@ while(<>){
 }
 
 # Process those rows to extract the high and low temps
-my %d; 
+my %d;
 foreach (@csv) {
 	my @p=split/,/;
 	$d{$p[1]}{Low} = $p[2] if $p[0] eq 'Low';
@@ -36,9 +42,11 @@ print "Date, Date's GDD, Cumulative GDD\n";
 
 # Process the data to extract the average temperature for the date, and
 # calculate the growing degrees days for the date; add it to the accumulator
-foreach (sort keys %d){ 
-	my $avg = ($d{$_}{High}>86?86:$d{$_}{High} + $d{$_}{Low})/2; 
-	my $gdd = $avg-50.0; $gdd = 0 if $gdd < 0; 
+foreach (sort keys %d){
+	# If the high is above 86, we throw out the extra heat.	
+	my $high = $d{$_}{High} > 86 ? 86 : $d{$_}{High};
+	my $avg = ($high + $d{$_}{Low})/2;
+	my $gdd = $avg-50.0; $gdd = 0 if $gdd < 0;
 	$total_gdd += $gdd;
 	print "$_, $gdd, $total_gdd\n";
 }
